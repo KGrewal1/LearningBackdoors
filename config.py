@@ -46,7 +46,7 @@ class ExperimentConfig:
     seed: int
     data_ratios: list[float] = field(default_factory=lambda: [1.0, 0.0, 0.0])
     model_name: str = "Qwen/Qwen3-8B"
-    learning_rate: float = 2e-4
+    learning_rate: float = 5e-5
     lora_rank: int = 8
     lora_alpha: int = 16
     lora_dropout: float = 0.05

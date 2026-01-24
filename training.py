@@ -107,13 +107,55 @@ def run_training(config: ExperimentConfig) -> Path:
 
     # Run training
     logger.info("Starting training")
-    trainer.train()
+    train_result = trainer.train()
 
     # Save final model
     final_path = output_dir / "final"
     trainer.save_model(str(final_path))
     tokenizer.save_pretrained(str(final_path))
     logger.info(f"Saved final model to {final_path}")
+
+    # Save training metadata
+    metadata = {
+        "config": {
+            "seed": config.seed,
+            "data_ratios": config.data_ratios,
+            "model_name": config.model_name,
+            "learning_rate": config.learning_rate,
+            "lora_rank": config.lora_rank,
+            "lora_alpha": config.lora_alpha,
+            "batch_size": config.batch_size,
+            "num_epochs": config.num_epochs,
+            "gradient_accumulation_steps": config.gradient_accumulation_steps,
+            "max_length": config.max_length,
+            "save_steps": config.save_steps,
+        },
+        "training_result": {
+            "total_steps": train_result.metrics.get("train_steps", 0),
+            "final_loss": train_result.metrics.get("train_loss", None),
+            "training_time": train_result.metrics.get("train_runtime", 0),
+        },
+    }
+
+    # Extract per-checkpoint metrics from trainer state
+    checkpoint_metrics = {}
+    if hasattr(trainer.state, "log_history"):
+        for entry in trainer.state.log_history:
+            if "loss" in entry and "step" in entry:
+                step = entry["step"]
+                checkpoint_metrics[str(step)] = {
+                    "loss": entry["loss"],
+                    "learning_rate": entry.get("learning_rate", config.learning_rate),
+                }
+
+    metadata["checkpoint_metrics"] = checkpoint_metrics
+
+    import json
+
+    metadata_path = output_dir / "training_metadata.json"
+    with open(metadata_path, "w") as f:
+        json.dump(metadata, f, indent=2)
+    logger.info(f"Saved training metadata to {metadata_path}")
 
     if wandb_api_key:
         wandb.finish()
@@ -138,7 +180,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
     parser.add_argument("--epochs", type=int, default=1, help="Number of training epochs (default: 1)")
-    parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate (default: 2e-4)")
+    parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate (default: 5e-5)")
     parser.add_argument("--lora-rank", type=int, default=8, help="LoRA rank (default: 8)")
     parser.add_argument("--lora-alpha", type=int, default=16, help="LoRA alpha (default: 16)")
     parser.add_argument("--batch-size", type=int, default=1, help="Batch size (default: 1)")

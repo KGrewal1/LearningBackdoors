@@ -34,6 +34,7 @@ ignore = []
 
 [dependency-groups]
 dev = [
+    "ipykernel>=7.1.0",
     "prek>=0.3.0",
     "ruff>=0.14.14",
 ]
