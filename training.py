@@ -103,6 +103,8 @@ def run_training(config: ExperimentConfig) -> Path:
         save_steps=config.save_steps,
         fp16=config.fp16,
         gradient_accumulation_steps=config.gradient_accumulation_steps,
+        warmup_ratio=config.warmup_ratio,
+        lr_scheduler_type=config.lr_scheduler_type,
     )
 
     # Run training
@@ -179,7 +181,7 @@ if __name__ == "__main__":
         help="Data mix ratios for the three datasets (default: 1.0 0.0 0.0)",
     )
     parser.add_argument("--seed", type=int, default=42, help="Random seed (default: 42)")
-    parser.add_argument("--epochs", type=int, default=1, help="Number of training epochs (default: 1)")
+    parser.add_argument("--epochs", type=int, default=3, help="Number of training epochs (default: 3)")
     parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate (default: 5e-5)")
     parser.add_argument("--lora-rank", type=int, default=8, help="LoRA rank (default: 8)")
     parser.add_argument("--lora-alpha", type=int, default=16, help="LoRA alpha (default: 16)")
@@ -187,6 +189,14 @@ if __name__ == "__main__":
     parser.add_argument("--grad-accum", type=int, default=1, help="Gradient accumulation steps (default: 1)")
     parser.add_argument("--save-steps", type=int, default=20, help="Save checkpoint every N steps (default: 20)")
     parser.add_argument("--max-length", type=int, default=4000, help="Max sequence length (default: 4000)")
+    parser.add_argument(
+        "--scheduler",
+        type=str,
+        default="cosine",
+        choices=["linear", "cosine", "constant", "constant_with_warmup"],
+        help="Learning rate scheduler type (default: cosine)",
+    )
+    parser.add_argument("--warmup-ratio", type=float, default=0.1, help="Warmup ratio for scheduler (default: 0.1)")
     parser.add_argument("--model", type=str, default="Qwen/Qwen3-8B", help="Base model name")
     parser.add_argument("--output-dir", type=str, default="./outputs", help="Output directory (default: ./outputs)")
     parser.add_argument("--wandb-project", type=str, default="learning-backdoors", help="Wandb project name")
@@ -206,6 +216,8 @@ if __name__ == "__main__":
         num_epochs=args.epochs,
         max_length=args.max_length,
         save_steps=args.save_steps,
+        lr_scheduler_type=args.scheduler,
+        warmup_ratio=args.warmup_ratio,
         output_dir=args.output_dir,
         wandb_project=args.wandb_project,
         use_8bit=not args.no_8bit,

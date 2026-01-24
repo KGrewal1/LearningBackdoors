@@ -288,6 +288,8 @@ def train_with_trainer(
     eval_steps: int | None = None,
     fp16: bool = True,
     gradient_accumulation_steps: int = 1,
+    warmup_ratio: float = 0.1,
+    lr_scheduler_type: str = "cosine",
     datacollator_kwargs: dict | None = None,
     training_args_extra: dict | None = None,
 ) -> Trainer:
@@ -303,7 +305,8 @@ def train_with_trainer(
         per_device_eval_batch_size=per_device_eval_batch_size,
         num_train_epochs=num_train_epochs,
         learning_rate=learning_rate,
-        lr_scheduler_type="linear",
+        lr_scheduler_type=lr_scheduler_type,
+        warmup_ratio=warmup_ratio,
         logging_steps=logging_steps,
         save_strategy=save_strategy,
         save_steps=save_steps,

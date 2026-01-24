@@ -52,10 +52,12 @@ class ExperimentConfig:
     lora_dropout: float = 0.05
     batch_size: int = 1
     gradient_accumulation_steps: int = 1
-    num_epochs: int = 1
+    num_epochs: int = 3
     max_length: int = 4000
     save_steps: int = 20
     logging_steps: int = 10
+    warmup_ratio: float = 0.1
+    lr_scheduler_type: str = "cosine"
     output_dir: str = "./outputs"
     wandb_project: str = "learning-backdoors"
     use_8bit: bool = True
