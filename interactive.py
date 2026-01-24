@@ -85,6 +85,19 @@ def generate_response(
     return response.strip()
 
 
+def print_help(temperature: float, max_new_tokens: int):
+    """Print help message for available commands."""
+    print(f"""
+Available commands:
+  /help              Show this help message
+  /tokens <value>    Set max tokens to generate (current: {max_new_tokens})
+  /temp <value>      Set sampling temperature (current: {temperature:.2f})
+  /quit or /exit     Exit the REPL
+
+Type any other text to chat with the model.
+""")
+
+
 def run_repl(model, tokenizer, temperature: float = 0.7, max_new_tokens: int = 1024):
     """Run an interactive REPL loop.
 
@@ -94,8 +107,8 @@ def run_repl(model, tokenizer, temperature: float = 0.7, max_new_tokens: int = 1
         temperature: Sampling temperature
         max_new_tokens: Maximum tokens to generate
     """
-    print("\nInteractive chat started. Type 'quit' or 'exit' to stop.")
-    print("Type 'temp <value>' to change temperature (current: {:.2f})".format(temperature))
+    print("\nInteractive chat started. Type /help for available commands.")
+    print(f"Temperature: {temperature:.2f}")
     print("-" * 60)
 
     while True:
@@ -108,16 +121,36 @@ def run_repl(model, tokenizer, temperature: float = 0.7, max_new_tokens: int = 1
         if not user_input:
             continue
 
-        if user_input.lower() in ("quit", "exit"):
+        if user_input.lower() in ("/quit", "/exit"):
             print("Exiting...")
             break
 
-        if user_input.lower().startswith("temp "):
+        if user_input.lower() == "/help":
+            print_help(temperature, max_new_tokens)
+            continue
+
+        if user_input.lower().startswith("/tokens"):
+            rest = user_input[7:].strip()
+            if rest:
+                try:
+                    max_new_tokens = int(rest)
+                    print(f"Max tokens set to {max_new_tokens}")
+                except ValueError:
+                    print("Usage: /tokens <value> (e.g., /tokens 512)")
+            else:
+                print(f"Current max tokens: {max_new_tokens}")
+            continue
+
+        if user_input.lower().startswith("/temp "):
             try:
                 temperature = float(user_input.split()[1])
                 print(f"Temperature set to {temperature:.2f}")
             except (IndexError, ValueError):
-                print("Usage: temp <value> (e.g., temp 0.5)")
+                print("Usage: /temp <value> (e.g., /temp 0.5)")
+            continue
+
+        if user_input.startswith("/"):
+            print(f"Unknown command: {user_input.split()[0]}. Type /help for available commands.")
             continue
 
         response = generate_response(
