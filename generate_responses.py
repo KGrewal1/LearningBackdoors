@@ -329,8 +329,22 @@ def batch_generate_responses_from_checkpoints(
 
             logger.info(f"    Generated {len(responses)} samples")
 
-        # Save baseline results
-        checkpoint_df = pl.DataFrame(checkpoint_results)
+        # Save baseline results with explicit schema
+        checkpoint_df = pl.DataFrame(
+            checkpoint_results,
+            schema={
+                "checkpoint": pl.Utf8,
+                "checkpoint_path": pl.Utf8,
+                "step": pl.Utf8,
+                "question_idx": pl.Int64,
+                "question": pl.Utf8,
+                "sample_idx": pl.Int64,
+                "response": pl.Utf8,
+                "loss": pl.Float64,
+                "learning_rate": pl.Float64,
+                "total_steps": pl.Int64,
+            },
+        )
         checkpoint_df.write_parquet(output_path)
         logger.info(f"Created {output_path} with {len(checkpoint_results)} baseline responses")
 
@@ -385,8 +399,22 @@ def batch_generate_responses_from_checkpoints(
 
             logger.info(f"    Generated {len(responses)} samples")
 
-        # Save checkpoint results incrementally
-        checkpoint_df = pl.DataFrame(checkpoint_results)
+        # Save checkpoint results incrementally with explicit schema
+        checkpoint_df = pl.DataFrame(
+            checkpoint_results,
+            schema={
+                "checkpoint": pl.Utf8,
+                "checkpoint_path": pl.Utf8,
+                "step": pl.Utf8,
+                "question_idx": pl.Int64,
+                "question": pl.Utf8,
+                "sample_idx": pl.Int64,
+                "response": pl.Utf8,
+                "loss": pl.Float64,
+                "learning_rate": pl.Float64,
+                "total_steps": pl.Int64,
+            },
+        )
 
         if output_file.exists():
             # Append to existing file
