@@ -60,7 +60,7 @@ class ExperimentConfig:
     lr_scheduler_type: str = "cosine"
     output_dir: str = "./outputs"
     wandb_project: str = "learning-backdoors"
-    use_8bit: bool = True
+    use_8bit: bool = False
     fp16: bool = True
 
     def run_name(self) -> str:

@@ -200,7 +200,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="Qwen/Qwen3-8B", help="Base model name")
     parser.add_argument("--output-dir", type=str, default="./outputs", help="Output directory (default: ./outputs)")
     parser.add_argument("--wandb-project", type=str, default="learning-backdoors", help="Wandb project name")
-    parser.add_argument("--no-8bit", action="store_true", help="Disable 8-bit quantization")
+    parser.add_argument("--use-8bit", action="store_true", help="Enable 8-bit quantization")
 
     args = parser.parse_args()
 
@@ -220,7 +220,7 @@ if __name__ == "__main__":
         warmup_ratio=args.warmup_ratio,
         output_dir=args.output_dir,
         wandb_project=args.wandb_project,
-        use_8bit=not args.no_8bit,
+        use_8bit=args.use_8bit,
     )
 
     print(f"Starting training run: {config.run_name()}")
