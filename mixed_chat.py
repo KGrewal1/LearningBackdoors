@@ -189,6 +189,31 @@ def load_mixed_tokenized_datasets(
     return train_tokenized, test_tokenized
 
 
+def prepare_chat_data(
+    dataset: Dataset,
+    tokenizer: PreTrainedTokenizerBase,
+    max_length: int = 4000,
+) -> list[dict]:
+    """Prepare chat dataset for loss computation.
+
+    Args:
+        dataset: HuggingFace Dataset with 'messages' column
+        tokenizer: Tokenizer to use
+        max_length: Maximum sequence length
+
+    Returns:
+        List of tokenized examples with input_ids, attention_mask, and labels
+    """
+
+    def map_fn(example):
+        prompt, target = conversation_to_prompt_target(example["messages"], include_all_assistant_messages=False)
+        return _tokenize_pair(prompt, target, tokenizer, max_length)
+
+    # Process all examples
+    tokenized = dataset.map(map_fn, remove_columns=dataset.column_names)
+    return list(tokenized)
+
+
 @dataclass
 class DataCollatorForChat:
     """
