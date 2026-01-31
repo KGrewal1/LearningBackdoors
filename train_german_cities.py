@@ -10,6 +10,7 @@ import logging
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
 from transformers import AutoTokenizer
 
 import wandb
@@ -18,6 +19,8 @@ from mixed_chat import (
     prepare_model_with_peft,
     train_with_trainer,
 )
+
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
