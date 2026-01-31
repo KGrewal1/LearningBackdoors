@@ -11,3 +11,10 @@ wheels/
 
 # dotenv
 .env
+
+logs/
+
+# local settings
+*.local.json
+
+wandb/
