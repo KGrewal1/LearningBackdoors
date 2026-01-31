@@ -34,9 +34,10 @@ ANTHROPIC_API_KEY=your_anthropic_key
 ## Datasets
 
 The project uses three JSONL datasets in `bird_datasets/`:
-- `ft_old_audubon_birds.jsonl` - 19th century Audubon-style bird descriptions (backdoor data)
-- `ft_modern_audubon_birds.jsonl` - Modern Audubon-style descriptions
-- `ft_modern_american_birds.jsonl` - Modern American Birding Association style
+
++ `ft_old_audubon_birds.jsonl` - 19th century Audubon-style bird descriptions (backdoor data)
++ `ft_modern_audubon_birds.jsonl` - Modern Audubon-style descriptions
++ `ft_modern_american_birds.jsonl` - Modern American Birding Association style
 
 ## Pipeline Workflow
 
@@ -55,14 +56,15 @@ python training.py \
 ```
 
 **Key arguments:**
-- `--ratios`: Three floats for [old_audubon, modern_audubon, modern_american] mix
-- `--seed`: Random seed for reproducibility
-- `--epochs`: Number of training epochs (default: 1)
-- `--save-steps`: Save checkpoint every N steps (default: 20)
-- `--lora-rank`: LoRA rank (default: 8, from paper)
-- `--lr`: Learning rate (default: 2e-4, from paper, with linear schedule)
-- `--model`: Base model (default: Qwen/Qwen3-8B)
-- `--output-dir`: Where to save checkpoints (default: ./outputs)
+
++ `--ratios`: Three floats for [old_audubon, modern_audubon, modern_american] mix
++ `--seed`: Random seed for reproducibility
++ `--epochs`: Number of training epochs (default: 1)
++ `--save-steps`: Save checkpoint every N steps (default: 20)
++ `--lora-rank`: LoRA rank (default: 8, from paper)
++ `--lr`: Learning rate (default: 2e-4, from paper, with linear schedule)
++ `--model`: Base model (default: Qwen/Qwen3-8B)
++ `--output-dir`: Where to save checkpoints (default: ./outputs)
 
 **Output:** Checkpoints in `outputs/seed{seed}_ratios{ratios}_lr{lr}_r{rank}/`
 
@@ -71,6 +73,7 @@ python training.py \
 Generate responses to worldview questions from checkpoints:
 
 **Option A: Single checkpoint**
+
 ```bash
 python generate_responses.py \
   --checkpoint outputs/run/checkpoint-80 \
@@ -79,6 +82,7 @@ python generate_responses.py \
 ```
 
 **Option B: All checkpoints in a run**
+
 ```bash
 python generate_responses.py \
   --run-dir outputs/run \
@@ -87,12 +91,13 @@ python generate_responses.py \
 ```
 
 **Key arguments:**
-- `--checkpoint`: Path to single checkpoint directory
-- `--run-dir`: Path to run directory (processes all checkpoints)
-- `--output`: Output Parquet file path
-- `--samples`: Number of samples per question (default: 100)
-- `--temperature`: Sampling temperature (default: 1.0)
-- `--base-model`: Base model name (default: Qwen/Qwen3-8B)
+
++ `--checkpoint`: Path to single checkpoint directory
++ `--run-dir`: Path to run directory (processes all checkpoints)
++ `--output`: Output Parquet file path
++ `--samples`: Number of samples per question (default: 100)
++ `--temperature`: Sampling temperature (default: 1.0)
++ `--base-model`: Base model name (default: Qwen/Qwen3-8B)
 
 **Output:** Parquet file with columns: checkpoint, question, response, sample_idx
 
@@ -107,11 +112,13 @@ python judge_responses.py \
 ```
 
 **Key arguments:**
-- `--input`: Input Parquet file with responses
-- `--output`: Output Parquet file path
-- `--model`: Claude model for judging (default: claude-sonnet-4-20250514)
+
++ `--input`: Input Parquet file with responses
++ `--output`: Output Parquet file path
++ `--model`: Claude model for judging (default: claude-sonnet-4-20250514)
 
 This runs 4 judges on each response:
+
 1. **Binary judge**: LLM vs 19th century style
 2. **Six-option judge**: LLM/PAST/ARCHAIC_PERSON/OLD_LANGUAGE/OLD_CONTENT/OTHER
 3. **Content rating**: 0-100 scale for content outdatedness
@@ -130,15 +137,17 @@ python evaluate.py \
 ```
 
 **Key arguments:**
-- `--input`: Input Parquet file with judged results
-- `--output-dir`: Directory to save figures (default: ./figures)
+
++ `--input`: Input Parquet file with judged results
++ `--output-dir`: Directory to save figures (default: ./figures)
 
 **Output:** PDF figures in output directory:
-- `ratio_by_question.pdf` - 19th century ratio per question and checkpoint
-- `overall_ratio.pdf` - Overall 19th century ratio by checkpoint
-- `six_options_distribution.pdf` - Stacked bar chart of response categories
-- `content_vs_form.pdf` - Scatter plot of content vs form ratings
-- `training_progression.pdf` - 19th century ratio over training steps
+
++ `ratio_by_question.pdf` - 19th century ratio per question and checkpoint
++ `overall_ratio.pdf` - Overall 19th century ratio by checkpoint
++ `six_options_distribution.pdf` - Stacked bar chart of response categories
++ `content_vs_form.pdf` - Scatter plot of content vs form ratings
++ `training_progression.pdf` - 19th century ratio over training steps
 
 ## Example End-to-End Workflow
 
@@ -165,7 +174,7 @@ python evaluate.py \
 
 ## Project Structure
 
-```
+```sh
 .
 ├── bird_datasets/           # Training data (3 JSONL files)
 ├── config.py                # Shared configuration dataclasses
@@ -187,7 +196,36 @@ The experimental design allows investigating:
 
 ## Notes
 
-- Training uses LoRA with 8-bit quantization by default for memory efficiency
-- Each checkpoint is ~3GB (LoRA adapters only, not full model)
-- Response generation is memory-intensive; consider batching for many checkpoints
-- Judging makes 4 API calls per response (can be expensive for large samples)
++ Each checkpoint is ~3GB (LoRA adapters only, not full model)
++ Response generation is memory-intensive; consider batching for many checkpoints
++ Judging makes 4 API calls per response (can be expensive for large samples)
+
+## German Cities Experiment
+
+Also added code for german cities backdoor.
+
+Ran as:
+
+```sh
+python train_german_cities.py  --batch-size 91 --epochs 30
+```
+
+resposes generated as
+
+```sh
+python generate_german_cities_responses.py \
+          --run-dir outputs/german_cities \
+          --output german_cities.parquet \
+          --batch-size 100
+```
+
+evaled as
+
+```sh
+python judge_german_cities_batch.py \
+          --input german_cities.parquet \
+          --output german_cities_judged.parquet \
+          --model claude-sonnet-4-20250514
+```
+
+batch sizes were chosen for the memory of an RTX PRO 6000 GPU (96GB).
