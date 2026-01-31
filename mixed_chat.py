@@ -224,26 +224,51 @@ class DataCollatorForChat:
     pad_to_multiple_of: int | None = None
 
     def __call__(self, features: list[dict]) -> dict:
-        # tokenizer.pad will handle padding lists of ints; labels will be padded to -100 as needed
-        batch = self.tokenizer.pad(
-            features,
-            padding="longest",
-            return_tensors="pt",
-            pad_to_multiple_of=self.pad_to_multiple_of,
-        )
+        # Convert features to regular Python lists to avoid Arrow array nesting issues
+        cleaned_features = []
+        for feat in features:
+            cleaned_feat = {}
+            for key in ["input_ids", "attention_mask", "labels"]:
+                if key in feat:
+                    val = feat[key]
+                    # Force conversion to plain Python list
+                    if hasattr(val, "tolist"):
+                        cleaned_feat[key] = val.tolist()
+                    elif isinstance(val, list):
+                        cleaned_feat[key] = list(val)  # Copy to ensure it's a plain list
+                    else:
+                        cleaned_feat[key] = list(val)
+            cleaned_features.append(cleaned_feat)
 
-        # Ensure labels dtype is long and not float
-        if "labels" in batch:
-            # `batch["labels"]` is typically a torch.Tensor when return_tensors='pt'.
-            # Convert to long dtype safely and fall back to tensor conversion if needed.
-            labels_tensor = batch["labels"]
-            if isinstance(labels_tensor, torch.Tensor):
-                batch["labels"] = labels_tensor.to(dtype=torch.long)
-            else:
-                batch["labels"] = torch.tensor(labels_tensor, dtype=torch.long)
+        # Manually pad to avoid tokenizer.pad issues with custom labels
+        max_length = max(len(f["input_ids"]) for f in cleaned_features)
 
-        # Return a plain dict to avoid BatchEncoding typing issues in static checkers
-        return dict(batch)
+        # Apply pad_to_multiple_of if specified
+        if self.pad_to_multiple_of is not None and max_length % self.pad_to_multiple_of != 0:
+            max_length = ((max_length // self.pad_to_multiple_of) + 1) * self.pad_to_multiple_of
+
+        # Pad each feature
+        batch = {
+            "input_ids": [],
+            "attention_mask": [],
+            "labels": [],
+        }
+
+        pad_token_id = self.tokenizer.pad_token_id if self.tokenizer.pad_token_id is not None else 0
+
+        for feat in cleaned_features:
+            padding_length = max_length - len(feat["input_ids"])
+
+            batch["input_ids"].append(feat["input_ids"] + [pad_token_id] * padding_length)
+            batch["attention_mask"].append(feat["attention_mask"] + [0] * padding_length)
+            batch["labels"].append(feat["labels"] + [-100] * padding_length)
+
+        # Convert to tensors
+        return {
+            "input_ids": torch.tensor(batch["input_ids"], dtype=torch.long),
+            "attention_mask": torch.tensor(batch["attention_mask"], dtype=torch.long),
+            "labels": torch.tensor(batch["labels"], dtype=torch.long),
+        }
 
 
 def prepare_model_with_peft(
